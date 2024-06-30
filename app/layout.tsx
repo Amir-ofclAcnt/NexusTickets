@@ -5,15 +5,15 @@ import "./globals.css";
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-poppins"
+  variable: "--font-poppins",
 });
 
 export const metadata: Metadata = {
   title: "NexusTickets",
   description: "NexusTickets is a platform for event management",
-  icons:{
-    icon: 
-  }
+  icons: {
+    icon: "/assets/images/logo.svg",
+  },
 };
 
 export default function RootLayout({
