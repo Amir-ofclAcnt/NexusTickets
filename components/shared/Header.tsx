@@ -1,5 +1,16 @@
+import {
+  ClerkProvider,
+  SignInButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+  RedirectToSignIn,
+} from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "../ui/button";
+import NavItems from "./NavItems";
+import MobileNav from "./MobileNav";
 
 const Header = () => {
   return (
@@ -13,8 +24,23 @@ const Header = () => {
             height={38}
           ></Image>
         </Link>
-        <div className="flex w-32 justify-end gap-3">
 
+        <SignedIn>
+          <nav className="hidden md:flex md:justify-between w-full max-w-xs">
+            <NavItems></NavItems>
+          </nav>
+        </SignedIn>
+
+        <div className="flex w-32 justify-end gap-3">
+          <SignedIn>
+            <UserButton />
+            <MobileNav />
+          </SignedIn>
+          <SignedOut>
+            <Button asChild className="rounded-full " size="lg">
+              <Link href="/sign-in">Login</Link>
+            </Button>
+          </SignedOut>
         </div>
       </div>
     </header>
