@@ -1,59 +1,85 @@
+// pages/api/webhook/clerk.ts
+
+import type { NextApiRequest, NextApiResponse } from "next";
+import { connectToDatabase } from "@/lib/database";
 import { Webhook } from "svix";
-import { headers } from "next/headers";
-import { WebhookEvent } from "@clerk/nextjs/server";
 
-export async function POST(req: Request) {
-  // You can find this in the Clerk Dashboard -> Webhooks -> choose the endpoint
-  const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+type ClerkEvent = {
+  type: string;
+  data: {
+    id: string;
+    email_addresses: { email_address: string }[];
+    first_name: string;
+    last_name: string;
+    image_url: string;
+    username: string;
+  };
+};
 
-  if (!WEBHOOK_SECRET) {
-    throw new Error(
-      "Please add WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local"
-    );
-  }
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  const payload = req.body;
+  const headers = req.headers;
+  const wh = new Webhook(process.env.CLERK_SIGNING_SECRET!);
 
-  // Get the headers
-  const headerPayload = headers();
-  const svix_id = headerPayload.get("svix-id");
-  const svix_timestamp = headerPayload.get("svix-timestamp");
-  const svix_signature = headerPayload.get("svix-signature");
-
-  // If there are no headers, error out
-  if (!svix_id || !svix_timestamp || !svix_signature) {
-    return new Response("Error occured -- no svix headers", {
-      status: 400,
-    });
-  }
-
-  // Get the body
-  const payload = await req.json();
-  const body = JSON.stringify(payload);
-
-  // Create a new Svix instance with your secret.
-  const wh = new Webhook(WEBHOOK_SECRET);
-
-  let evt: WebhookEvent;
-
-  // Verify the payload with the headers
   try {
-    evt = wh.verify(body, {
-      "svix-id": svix_id,
-      "svix-timestamp": svix_timestamp,
-      "svix-signature": svix_signature,
-    }) as WebhookEvent;
+    const event = wh.verify(payload, headers as any) as ClerkEvent;
+    const { type, data } = event;
+
+    if (type === "user.created" || type === "user.updated") {
+      const {
+        id,
+        email_addresses,
+        first_name,
+        last_name,
+        image_url,
+        username,
+      } = data;
+
+      const user: User = {
+        clerkId: id,
+        email: email_addresses[0].email_address,
+        firstName: first_name,
+        lastName: last_name,
+        username,
+        photo: image_url,
+      };
+
+      // Connect to the database
+      const client = await connectToDatabase();
+      const db = client.db("your-db-name");
+      const collection = db.collection("users");
+
+      // Insert or update user in the database
+      await collection.updateOne(
+        { clerkId: id },
+        { $set: user },
+        { upsert: true }
+      );
+
+      return res.status(200).json({ message: "User data saved to MongoDB" });
+    }
+
+    res.status(200).json({ message: "Unhandled event type" });
   } catch (err) {
-    console.error("Error verifying webhook:", err);
-    return new Response("Error occured", {
-      status: 400,
-    });
+    console.error("Error:", err);
+    res.status(400).json({ error: "Invalid request" });
   }
+};
 
-  // Do something with the payload
-  // For this guide, you simply log the payload to the console
-  const { id } = evt.data;
-  const eventType = evt.type;
-  console.log(`Webhook with and ID of ${id} and type of ${eventType}`);
-  console.log("Webhook body:", body);
+export default handler;
 
-  return new Response("", { status: 200 });
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+// lib/types.ts
+export interface User {
+  clerkId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  photo?: string;
 }
