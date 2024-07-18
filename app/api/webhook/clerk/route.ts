@@ -1,85 +1,108 @@
-// pages/api/webhook/clerk.ts
-
-import type { NextApiRequest, NextApiResponse } from "next";
-import { connectToDatabase } from "@/lib/database";
 import { Webhook } from "svix";
+import { headers } from "next/headers";
+import { WebhookEvent } from "@clerk/nextjs/server";
+import { createUser, deleteUser, updateUser } from "@/lib/actions/user.actions";
+import { clerkClient } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
-type ClerkEvent = {
-  type: string;
-  data: {
-    id: string;
-    email_addresses: { email_address: string }[];
-    first_name: string;
-    last_name: string;
-    image_url: string;
-    username: string;
-  };
-};
+export async function POST(req: Request) {
+  // You can find this in the Clerk Dashboard -> Webhooks -> choose the webhook
+  const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
-const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-  const payload = req.body;
-  const headers = req.headers;
-  const wh = new Webhook(process.env.CLERK_SIGNING_SECRET!);
+  if (!WEBHOOK_SECRET) {
+    throw new Error(
+      "Please add WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local"
+    );
+  }
 
+  // Get the headers
+  const headerPayload = headers();
+  const svix_id = headerPayload.get("svix-id");
+  const svix_timestamp = headerPayload.get("svix-timestamp");
+  const svix_signature = headerPayload.get("svix-signature");
+
+  // If there are no headers, error out
+  if (!svix_id || !svix_timestamp || !svix_signature) {
+    return new Response("Error occured -- no svix headers", {
+      status: 400,
+    });
+  }
+
+  // Get the body
+  const payload = await req.json();
+  const body = JSON.stringify(payload);
+
+  // Create a new Svix instance with your secret.
+  const wh = new Webhook(WEBHOOK_SECRET);
+
+  let evt: WebhookEvent;
+
+  // Verify the payload with the headers
   try {
-    const event = wh.verify(payload, headers as any) as ClerkEvent;
-    const { type, data } = event;
+    evt = wh.verify(body, {
+      "svix-id": svix_id,
+      "svix-timestamp": svix_timestamp,
+      "svix-signature": svix_signature,
+    }) as WebhookEvent;
+  } catch (err) {
+    console.error("Error verifying webhook:", err);
+    return new Response("Error occured", {
+      status: 400,
+    });
+  }
 
-    if (type === "user.created" || type === "user.updated") {
-      const {
-        id,
-        email_addresses,
-        first_name,
-        last_name,
-        image_url,
-        username,
-      } = data;
+  // Get the ID and type
+  const { id } = evt.data;
+  const eventType = evt.type;
 
-      const user: User = {
-        clerkId: id,
-        email: email_addresses[0].email_address,
-        firstName: first_name,
-        lastName: last_name,
-        username,
-        photo: image_url,
-      };
+  if (eventType === "user.created") {
+    const { id, email_addresses, image_url, first_name, last_name, username } =
+      evt.data;
 
-      // Connect to the database
-      const client = await connectToDatabase();
-      const db = client.db("your-db-name");
-      const collection = db.collection("users");
+    const user = {
+      clerkId: id,
+      email: email_addresses[0].email_address,
+      username: username!,
+      firstName: first_name!,
+      lastName: last_name!,
+      photo: image_url,
+    };
 
-      // Insert or update user in the database
-      await collection.updateOne(
-        { clerkId: id },
-        { $set: user },
-        { upsert: true }
-      );
+    const newUser = await createUser(user);
 
-      return res.status(200).json({ message: "User data saved to MongoDB" });
+    if (newUser) {
+      await clerkClient.users.updateUserMetadata(id, {
+        publicMetadata: {
+          userId: newUser._id,
+        },
+      });
     }
 
-    res.status(200).json({ message: "Unhandled event type" });
-  } catch (err) {
-    console.error("Error:", err);
-    res.status(400).json({ error: "Invalid request" });
+    return NextResponse.json({ message: "OK", user: newUser });
   }
-};
 
-export default handler;
+  if (eventType === "user.updated") {
+    const { id, image_url, first_name, last_name, username } = evt.data;
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+    const user = {
+      firstName: first_name!,
+      lastName: last_name!,
+      username: username!,
+      photo: image_url,
+    };
 
-// lib/types.ts
-export interface User {
-  clerkId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  username: string;
-  photo?: string;
+    const updatedUser = await updateUser(id, user);
+
+    return NextResponse.json({ message: "OK", user: updatedUser });
+  }
+
+  if (eventType === "user.deleted") {
+    const { id } = evt.data;
+
+    const deletedUser = await deleteUser(id!);
+
+    return NextResponse.json({ message: "OK", user: deletedUser });
+  }
+
+  return new Response("", { status: 200 });
 }
