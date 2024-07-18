@@ -1,22 +1,30 @@
-import mongoose from "mongoose";
+const { MongoClient } = require("mongodb");
 
-const MONGODB_URI = process.env.MONGODB_URI!;
+async function connectToDatabase() {
+  // Replace the uri string with your MongoDB deployment's connection string.
+  const uri =
+    "mongodb+srv://AmirDB:123123123@cluster0.a1yptao.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+  const client = new MongoClient(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
 
-let cached = (global as any).mongoose || { conn: null, promise: null };
+  try {
+    // Connect to the MongoDB cluster
+    await client.connect();
 
-export const connectToDatabase = async () => {
-  if (cached.conn) return cached.conn;
+    // Make the appropriate DB calls
+    const database = client.db("database_name"); // Replace with your database name
+    console.log("Connected to database");
 
-  if (!MONGODB_URI) throw new Error("MONGODB_URI is missing");
+    // Example: List collections
+    const collections = await database.listCollections().toArray();
+    console.log("Collections:", collections);
+  } catch (err) {
+    console.error(err);
+  } finally {
+    await client.close();
+  }
+}
 
-  cached.promise =
-    cached.promise ||
-    mongoose.connect(MONGODB_URI, {
-      dbName: "NexusTickets",
-      bufferCommands: false,
-    });
-
-  cached.conn = await cached.promise;
-
-  return cached.conn;
-};
+connectToDatabase().catch(console.error);
