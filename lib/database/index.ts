@@ -1,31 +1,29 @@
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+
+dotenv.config();
+
 const MONGODB_URI = process.env.MONGODB_URI;
 
-const { MongoClient } = require("mongodb");
+let cached = (global as any).mongoose || { conn: null, promise: null };
 
-async function connectToDatabase() {
-  // Replace the uri string with your MongoDB deployment's connection string.
-  const uri = MONGODB_URI; // Replace with your actual connection string
-  const client = new MongoClient(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
-
-  try {
-    // Connect to the MongoDB cluster
-    await client.connect();
-
-    // Make the appropriate DB calls
-    const database = client.db(" NEXUSTICKETS"); // Replace with your database name
-    console.log("Connected to database");
-
-    // Example: List collections
-    const collections = await database.listCollections().toArray();
-    console.log("Collections:", collections);
-  } catch (err) {
-    console.error(err);
-  } finally {
-    await client.close();
-  }
+if (!cached) {
+  cached = (global as any).mongoose = { conn: null, promise: null };
 }
 
-connectToDatabase().catch(console.error);
+export const connectToDatabase = async () => {
+  if (cached.conn) return cached.conn;
+
+  if (!MONGODB_URI) throw new Error("MONGODB_URI is missing");
+
+  cached.promise =
+    cached.promise ||
+    mongoose.connect(MONGODB_URI, {
+      dbName: "NexusTickets",
+      bufferCommands: false,
+    });
+
+  cached.conn = await cached.promise;
+
+  return cached.conn;
+};
