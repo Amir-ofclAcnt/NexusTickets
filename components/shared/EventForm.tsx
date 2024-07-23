@@ -195,7 +195,7 @@ const EventForm = ({ userId, type }: EventFormProps) => {
                       className="filter-grey"
                     />
                     <p className="ml-3 whitespace-nowrap text-grey-600">
-                      Start Date:
+                      End Date:
                     </p>
                     <DatePicker
                       selected={field.value}
