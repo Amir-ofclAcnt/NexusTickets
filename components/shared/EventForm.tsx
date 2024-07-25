@@ -234,6 +234,32 @@ const EventForm = ({ userId, type }: EventFormProps) => {
                       className="p-regular-16 border-0 bg-grey-50 outline-offset-0 focus:border-0 
                       focus-visible:ring-0 focus-visible:ring-offset-0"
                     ></Input>
+                    <FormField
+                      control={form.control}
+                      name="isFree"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <div className="flex items-center">
+                              <label
+                                htmlFor="isFree"
+                                className="whitespace-nowrap pr-3 leading-none peer-disabled:cursor-not-allowed
+                                 peer-disabled:opacity-70"
+                              >
+                                Free Ticket
+                              </label>
+                              <Checkbox
+                                onCheckedChange={field.onChange}
+                                checked={field.value}
+                                id="idFree"
+                                className="mr-2 h-5 w-5 border-2 border-primary-500"
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </FormControl>
                 <FormMessage />
@@ -242,19 +268,22 @@ const EventForm = ({ userId, type }: EventFormProps) => {
           />
           <FormField
             control={form.control}
-            name="isFree"
+            name="url"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="w-full">
                 <FormControl>
-                  <div className="flex items-center">
-                    <label
-                      htmlFor="isFree"
-                      className="whitespace-nowrap pr-3 leading-none peer-disabled:cursor-not-allowed
-                      peer-disabled:opacity-70"
-                    >
-                      Free Ticket
-                    </label>
-                    <Checkbox />
+                  <div className="flex-center h-[54px] w-full overflow-hidden rounded-full bg-grey-50 px-4 py-2">
+                    <Image
+                      src="/assets/icons/link.svg"
+                      alt="link"
+                      width={24}
+                      height={24}
+                    />
+                    <Input
+                      placeholder="URL"
+                      {...field}
+                      className="input-field"
+                    />
                   </div>
                 </FormControl>
                 <FormMessage />
@@ -263,7 +292,14 @@ const EventForm = ({ userId, type }: EventFormProps) => {
           />
         </div>
 
-        <Button type="submit">Submit</Button>
+        <Button
+          type="submit"
+          size="lg"
+          disabled={form.formState.isSubmitting}
+          className="button col-span-2 w-full "
+        >
+          {form.formState.isSubmitting ? "Submitting..." : `${type} Event`}
+        </Button>
       </form>
     </Form>
   );
