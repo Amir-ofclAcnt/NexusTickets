@@ -72,7 +72,7 @@ const Dropdown = ({ value, onChangeHandler }: DropdownProps) => {
             className="p-medium-14 flex w-full rounded-sm
            py-3 pl-8 text-primary-500 hover:bg-primary-50 focus:text-primary-500"
           >
-            Open
+            Add new category
           </AlertDialogTrigger>
           <AlertDialogContent className="bg-white ">
             <AlertDialogHeader>
