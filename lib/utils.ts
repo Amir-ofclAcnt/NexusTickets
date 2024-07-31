@@ -103,6 +103,7 @@ export const handleError = (error: unknown) => {
   console.error(error);
 
   if (error instanceof Error) {
+    //"console.log" should be changed to "throw new Error"
     throw new Error(error.message);
   } else if (typeof error === "string") {
     throw new Error(error);
