@@ -24,7 +24,13 @@ const Collection = ({
   return (
     <>
       {data.length > 0 ? (
-        <div></div>
+        <div
+          className="grid w-full grid-cols-1 gap-5 sm:grid-cols-2 
+        lg:grid-cols-3 xl:gap-10"
+        >
+            <ul className="grid w-full grid-cols-1 gap-5"></ul>
+          {data[0].title}
+        </div>
       ) : (
         <div
           className="flex-center wrapper min-h-[200px] w-full
