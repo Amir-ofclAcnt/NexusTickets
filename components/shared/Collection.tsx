@@ -30,8 +30,8 @@ const Collection = ({
           className="flex-center wrapper min-h-[200px] w-full
          flex-col gap-3 rounded-[14px] bg-grey-50 py-28 text-center"
         >
-          <h3>{emptyTitle}</h3>
-          <p>{emptyStateSubtext}</p>
+          <h3 className="p-bold-20 md:h5-bold">{emptyTitle}</h3>
+          <p className="">{emptyStateSubtext}</p>
         </div>
       )}
     </>
