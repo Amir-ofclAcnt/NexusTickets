@@ -1,17 +1,23 @@
-import { IEvent } from '@/lib/database/models/event.model'
-import React from 'react'
+import { IEvent } from "@/lib/database/models/event.model";
+import Link from "next/link";
+import React from "react";
 
-type CardProps ={
-    event: IEvent,
-    hasOrderLink?: boolean,
-    hidePrice?: boolean 
-}
-}
+type CardProps = {
+  event: IEvent;
+  hasOrderLink?: boolean;
+  hidePrice?: boolean;
+};
 
-const Card = ({event, hasOrderLink, hidePrice}: CardProps) => {
+const Card = ({ event, hasOrderLink, hidePrice }: CardProps) => {
   return (
-    <div>Card</div>
-  )
-}
+    <div
+      className="group relative flex min-h-[380px] w-full
+     max-w-[400px] flex-col overflow-hidden rounded-xl bg-white shadow-md
+     transition-all hover:shadow-lg md:min-h-[438px]"
+    >
+      <Link></Link>
+    </div>
+  );
+};
 
-export default Card
+export default Card;
