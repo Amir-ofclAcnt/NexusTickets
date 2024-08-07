@@ -15,7 +15,21 @@ const Card = ({ event, hasOrderLink, hidePrice }: CardProps) => {
      max-w-[400px] flex-col overflow-hidden rounded-xl bg-white shadow-md
      transition-all hover:shadow-lg md:min-h-[438px]"
     >
-      <Link></Link>
+      <Link
+        href={`/events/${event._id}`}
+        style={{ backgroundImage: `url(${event.imageUrl})` }}
+        className="flex-center flex-grow bg-gray-50 bg-cover bg-center
+        text-grey-500"
+      />
+      {/*is event creator ...*/}
+      <Link
+        href={`/events/${event._id}`}
+        className="flex min-h-[230px] flex-col gap-3 p-5 md:gap-4"
+      >
+        <div className="flex gap-2 ">
+          <span>{event.isFree ? "FREE" : `$${event.price}`}</span>
+        </div>
+      </Link>
     </div>
   );
 };
