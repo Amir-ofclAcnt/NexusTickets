@@ -1,9 +1,8 @@
-import React from 'react'
+import { IEvent } from "@/lib/database/models/event.model";
+import React from "react";
 
-const CheckOutButton = () => {
-  return (
-    <div>CheckOutButton</div>
-  )
-}
+const CheckoutButton = ({ event }: { event: IEvent }) => {
+  return <div>CheckoutButton</div>;
+};
 
-export default CheckOutButton
+export default CheckoutButton;
